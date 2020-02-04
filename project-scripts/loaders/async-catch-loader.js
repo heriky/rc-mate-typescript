@@ -12,7 +12,7 @@ const generate = require('@babel/generator').default;
  * 5. 能使用对象取值的，就不要使用traverse，这个方法的代码特别大。
  * 6. 注意递归调用。
  */
-module.exports = function(source) {
+module.exports = function (source) {
 	// const options = getOptions(this);
 
 	const ast = babylon.parse(source, { sourceType: 'module', plugins: [
@@ -22,13 +22,13 @@ module.exports = function(source) {
 		'typescript'
 	] });
 	traverse(ast, {
-		FunctionDeclaration: function(path) {
+		FunctionDeclaration: function (path) {
 			handleAsync(path);
 		},
-		FunctionExpression: function(path) {
+		FunctionExpression: function (path) {
 			handleAsync(path);
 		},
-		ClassMethod: function(path) {
+		ClassMethod: function (path) {
 			handleAsync(path);
 		}
 	});
@@ -38,7 +38,7 @@ module.exports = function(source) {
 };
 
 
-function handleAsync(path) {
+function handleAsync (path) {
 	const isAsync = path.node.async === true;
 	if (!isAsync) return;
 	path.traverse(expressionVisitor);
@@ -46,7 +46,7 @@ function handleAsync(path) {
 
 var expressionVisitor = {
 	// const a = awati fetchUser() 处理这种情况
-	VariableDeclarator: function(path) {
+	VariableDeclarator: function (path) {
 		if (t.isTryStatement(path.parentPath.parentPath.parent)) return;
 		// 1.先找到await的表达式，记住它
 		const expressNode = path.node.init;
@@ -77,7 +77,7 @@ var expressionVisitor = {
 		const targetPath = path.find(path => t.isVariableDeclaration(path.node));
 		targetPath.replaceWithMultiple([newAst1, newAst2]);
 	},
-	ExpressionStatement: function(path) {
+	ExpressionStatement: function (path) {
 		const EXPRESSION = path.node.expression;
 		if (t.isTryStatement(path.parentPath.parent)) return;
 

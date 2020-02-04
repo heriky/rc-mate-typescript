@@ -53,6 +53,8 @@ module.exports = ({ mode, mock }, ...others) => webpackMerge(webpackBase({ mode 
 			chunkFilename: '[name].css',
 			allChunks: true
 		}),
-		new ForkTsCheckerWebpackPlugin()
+		new ForkTsCheckerWebpackPlugin({
+			async: false
+		})
 	]
 });

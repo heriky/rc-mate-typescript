@@ -25,15 +25,15 @@ module.exports = ({ mode }) => ({
 				],
 				exclude: resolve('node_modules')
 			},
+			// {
+			// 	test: /\.ts(x?)$/,
+			// 	use: ['babel', {
+			// 		loader: 'ts-loader',
+			// 		options: { transpileOnly: true }
+			// 	}]
+			// },
 			{
-				test: /\.ts(x?)$/,
-				use: ['babel', {
-					loader: 'ts-loader',
-					options: { transpileOnly: true }
-				}]
-			},
-			{
-				test: /\.jsx?$/,
+				test: /\.(j|t)sx?$/,
 				use: ['babel', 'async-catch'],
 				exclude: /node_modules/
 			},
