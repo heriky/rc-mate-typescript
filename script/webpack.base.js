@@ -5,6 +5,10 @@ const { version } = require('react/package.json');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 
 const resolve = dir => path.resolve(__dirname, '..', dir);
+
+/**
+ * @type { import('webpack').Configuration }
+ */
 module.exports = ({ mode }) => ({
 	resolveLoader: {
 		modules: ['node_modules', path.resolve(__dirname, '../project-scripts/loaders')],
