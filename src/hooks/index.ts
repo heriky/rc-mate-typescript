@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 
 export function useMounted () {
-    const ref = useRef<boolean>(true);
+    const ref = useRef<boolean>(false);
     useEffect(() => {
-        ref.current = false;
+        ref.current = true;
     }, []);
     return ref.current;
 }

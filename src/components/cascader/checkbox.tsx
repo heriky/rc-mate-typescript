@@ -22,17 +22,17 @@ export default function Checkbox (props: Props) {
     }, [checked])
 
     function handleChange (e: React.MouseEvent) {
-        e.stopPropagation();
         const newChecked = !_checked;
         setChecked(newChecked);
         onChange(newChecked, e);
     }
 
     const classList = [styles.checkbox, className];
-    if (_checked === true) {
-        classList.push(styles.checked);
-    } else if (indeterminate) {
+
+    if (indeterminate) {
         classList.push(styles.indeterminate);
+    } else if (_checked) {
+        classList.push(styles.checked);
     }
 
     return <label className={styles.checkboxWrapper} onClick={handleChange} {...rest}>

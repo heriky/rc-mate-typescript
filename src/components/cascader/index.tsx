@@ -1,74 +1,57 @@
-import React, { useState, useMemo, ReactElement, ReactNode, useRef } from 'react';
-import { traverse, OriginType, countLayer } from './utils'
+import React, { useState, useMemo, useRef, ComponentType, ComponentProps, useEffect } from 'react';
+import { traverse, OriginType, countLayer, flatten, merge, checkOther, handleInitData } from './utils'
 import { VGroup, HGroup } from '../group';
 import Checkbox from './checkbox';
 import styles from './style.less';
 import rawData from './data';
+import { useMounted } from '../../hooks';
 
 const defaultProps = {
     data: rawData,
-    checkedIds: [] as string[] | number[],
-    onChange: (result: OriginType[], a: OriginType) => {}
+    checkedIds: [] as (string | number)[],
+    onChange: (result: OriginType[], a: OriginType) => {},
+    checkbox: Checkbox as ComponentType<Partial<ComponentProps<typeof Checkbox>>> // 这里，因为Checkbox的所有属性都是可选的，如果没有Partial则ts会报错
 };
 
 type Props = typeof defaultProps;
 
 const STATE_KEY = 'layerId';
 
-function flatten (data: OriginType) {
-    let tmp: OriginType | undefined = data;
-    const names = [];
-    const ids = [];
-    while(tmp) {
-        names.unshift(tmp.name);
-        ids.unshift(tmp.id);
-        tmp = tmp.parent;
-    }
-    return { id: ids.join(','), name: names.join(',') } 
-}
-
-function merge (result: OriginType[]): OriginType[] {
-    const parentIds = Array.from(new Set(result.map(rs => rs.parent?.id)));
-
-    const _parentId = parentIds.find(parentId => {
-        if (parentId === undefined || result[0] === undefined) return false;
-        const current = result.filter(item => item.parent?.id === parentId);
-        return current.length === result[0].parent?.children?.length;
-    });
-
-    let rs = result;
-    if (_parentId) {
-        // 移除当前，添加父亲
-        let parent;
-        rs = rs.filter(item => {
-            if (item?.parent?.id === _parentId) {
-                parent = item.parent;
-                return false;
-            }
-            return true;
-        });
-        parent && rs.push(parent);
-        rs = merge(rs);
-    }
-
-    return rs;
-}
-
 export default function Cascader (props: Props) {
-    const { data, checkedIds, onChange } = props;
+    const { data, checkbox: Compo, checkedIds, onChange } = props;
 
     const resultRef = useRef<OriginType[]>([]);
     const layerCount = useMemo(() => countLayer(data), [data])
 
     const [state, setState] = useState<{[key: string]: OriginType['id']}>({});
-    const [source, setSource] = useState<OriginType[]>(() => {
-        return traverse.top2Bottom(data, item => {
-            item.checked = false;
-            return item;
-        });
-    });
+    const [source, setSource] = useState<OriginType[]>(() => handleInitData(data));
+    const mounted = useMounted();
 
-    function layerClick (id: OriginType['id'] ,layer: number) {
+    useEffect(() => {
+        // 数据源变化响应（例如搜索功能）。需注意，未挂载时不要执行。
+        if (mounted) {
+            const newData = handleInitData(data);
+            setSource(newData);
+        }
+    }, [data, mounted]);
+
+    // 设置外部传入的已选项目。如果对于复杂需求，应该使用useEffect对result进行响应，对result中每个项都进行状态的判定
+    useEffect(() => {
+        function checkItems () {
+            if (!checkedIds.length) return;
+            const newSource = traverse.bottom2Top(source, item => {
+                if(checkedIds.includes(item.id)) { 
+                    item.checked = true; 
+                    return item;
+                }
+                return checkOther(item);
+            });
+            setSource(newSource);
+        }
+        checkItems();
+    }, [checkedIds, source]);
+
+    function itemClick (id: OriginType['id'] ,layer: number) {
         return () => {
             const newState = { ...state, [STATE_KEY + layer]: id };
             setState(newState);
@@ -81,35 +64,25 @@ export default function Cascader (props: Props) {
                 // 1. 本体赋值
                 if (item.id === _item.id) {
                     item.checked = v;
+                    item.indeterminate = undefined;
 
                      // 2. 子孙孩子同步。这里可以放心使用，不会出现性能问题，因为有限定条件，收益在每一次点击的时候，实际上这个遍历只执行一次
                     item.children = traverse.top2Bottom(item.children ?? [], it => {
                         it.checked = v;
+                        it.indeterminate = undefined;
                         return it;
                     });
 
                     return item;
                 }
-               
 
                 // 3.其余结点计算
-                // 如果有children则处理当前结点状态
-                if (item.children?.length) {
-                    if (item.children.every(child => child.checked)) {
-                        item.checked = true;
-                    } else if (item.children.every(child => child.checked === false)) {
-                        item.checked = false;
-                    } else {
-                        item.checked = undefined;
-                        item.indeterminate = true;
-                    }
-                }
-                
-                return item;
+                return checkOther(item);
             });
 
             setSource(newSource);
             
+            // 如果对于复杂需求，应该使用useEffect对result进行响应，对result中每个项都进行状态的判定
             // 计算结果
             if (v) {
                 resultRef.current.push(_item);
@@ -118,7 +91,6 @@ export default function Cascader (props: Props) {
             }
 
             const result = merge(resultRef.current);
-            console.log(result);
 
             onChange(result.map(flatten), _item);
         }
@@ -131,34 +103,36 @@ export default function Cascader (props: Props) {
         let tmp: OriginType[] = source;
         for (let i = 2; i <= layer; i += 1) {
             const target = tmp.find(item => item.id === state[STATE_KEY+ (i - 1)]); // 第二层的数据由第一层的id获得
-            const targetList = target && target.children ? target.children : [];
-            
-            if(i === layer || !targetList.length) return targetList;
-            tmp = targetList;
+            if (!target || !target.children?.length) return []; // 上一层未找到，则返回
+            if(i === layer) return target.children; // 找到当前层则返回
+           
+            tmp = target.children;
         }
         return tmp;
     }
 
     function renderLayer (list: OriginType[], layer: number) {
-        return <VGroup hAlign="flex-start" vAlign="flex-start" tag="ul" className={styles.layer}>
+        return <VGroup key={layer} hAlign="flex-start" vAlign="flex-start" tag="ul" className={styles.layer}>
             {list.map((item: OriginType) =>{
-                return <li className={styles.layerItem} key={item.id} onClick={layerClick(item.id, layer)}>
-                    <Checkbox checked={item.checked} indeterminate={item.indeterminate} onChange={itemCheck(item)} />
+                const classList = [styles.layerItem];
+                state[STATE_KEY + layer] === item.id && (classList.push(styles.active));
+                item.children?.length && (classList.push(styles.indicator));
+                const onClick = item.children?.length ? itemClick(item.id, layer) : () => {};
+
+                return <li className={classList.join(' ')} key={item.id} onClick={onClick}>
+                    <Compo checked={item.checked} indeterminate={item.indeterminate} onChange={itemCheck(item)} />
                     <span style={{ marginLeft: 7, verticalAlign: 3 }}>{item.name}</span>
                 </li>
             })}
         </VGroup>
     }
 
-    return <HGroup>
+    return <HGroup className={styles.cascader} hAlign="flex-start" vAlign="flex-start">
         {
             Array(layerCount).fill(1).map((a, i) => {
                 const layer = i + 1;
                 const layerData = getLayerData(layer);
-                return (layerData.length > 0 && 
-                    <section key={layer} className={styles.cascader}>
-                        {renderLayer(layerData, layer)}
-                    </section>) as JSX.Element;
+                return (layerData.length > 0 && renderLayer(layerData, layer)) as JSX.Element;
             })
         }
     </HGroup> 
