@@ -8,7 +8,7 @@ enum gapProps {
 type ChildrenType = ReactChild | ReactChild[];
 
 // 这里需要注意的是section、footer这些都是HTMLElment类型的，不需要出现在联合类型声明中
-type TagType = 'div' | 'p' | 'span' | 'ul' | 'li' | 'footer' | 'header' | 'section';
+type TagType = 'div' | 'p' | 'span' | 'ul' | 'li' | 'footer' | 'header' | 'section' | 'aside';
 export type TagElement = HTMLDivElement & HTMLParagraphElement & HTMLSpanElement & HTMLUListElement & HTMLLIElement;
 
 export const defaultProps = {

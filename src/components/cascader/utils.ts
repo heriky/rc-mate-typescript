@@ -102,11 +102,12 @@ export function merge (result: OriginType[]): OriginType[] {
 }
 
 export function handleInitData (data: OriginType[]) {
-    return traverse.top2Bottom(data, item => {
-        // 添加parent属性，添加checked属性
-        item.checked = false;
-        return item;
-    });
+    // return traverse.top2Bottom(data, item => {
+    //     // 添加parent属性，添加checked属性
+    //     item.checked = false;
+    //     return item;
+    // });
+    return traverse.top2Bottom(data, item => (item.checked = false, item)); // 逗号运算符
 }
 
 export function checkOther (item: OriginType) {

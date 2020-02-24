@@ -11,6 +11,7 @@ const defaultProps = {
     onChange: (checked: boolean, e: React.MouseEvent) => {}
 };
 
+// TODO:DSAF
 type Props = typeof defaultProps;
 export default function Checkbox (props: Props) {
 

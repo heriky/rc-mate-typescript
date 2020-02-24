@@ -7,7 +7,7 @@
     "start": "webpack-dev-server --config ./script/webpack.dev.js --env.mode=development",
     "build:qa": "webpack --config ./script/webpack.prod.js --env.mode=production --env.qa",
     "build:production": "webpack --config ./script/webpack.prod.js --env.mode=production --env.production",
-    "build": "webpack --config ./script/webpack.prod.js --env.mode=production --env.production && cp ./package.json ./dist/package.json"
+    "build": "webpack --config ./script/webpack.prod.js --env.mode=production --env.production && webpack --config ./script/webpack.web.js --env.mode=production && cp ./package.json ./dist/package.json"
   },
   "repository": {
     "type": "git",
