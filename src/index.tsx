@@ -5,6 +5,10 @@ import Accordin from './components/accordin';
 import { DevContainer } from './containers';
 import Other from './containers/other';
 import Dev2Container from './containers/dev2';
+import './test';
+
+// 算法测试
+import '../algorithm/link-list';
 
 const { Pane } = Accordin as typeof Accordin & { Pane: ComponentType<any> };
 

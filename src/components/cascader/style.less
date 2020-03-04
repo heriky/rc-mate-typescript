@@ -3,8 +3,11 @@
         box-sizing: border-box;
     }
     .layer {
-        width:100px;
-        border: 1px solid #ccc;
+        width:160px;
+        min-height: 162px;
+        // border: 1px solid #ccc;
+        border:1px solid rgba(228,240,253,1);
+        // box-shadow:1px 1px 3px 0px rgba(0,0,0,0.32);
         padding: 0;
         &~.layer {
             border-left: 0;
@@ -13,9 +16,14 @@
     .layer-item {
         position: relative;
         width: 100%;
-        padding: 5px 10px;
+        height: 28px;
+        line-height: 28px;
+        padding: 0 10px;
         margin:0;
         list-style: none;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
         &:hover {
             cursor: pointer;
             background-color: #f0f0f0;

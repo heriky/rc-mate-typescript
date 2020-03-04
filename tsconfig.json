@@ -17,8 +17,10 @@
       "resolveJsonModule": true,
       "isolatedModules": true,
       "noEmit": true,
+      "noImplicitThis": true,
       "jsx": "preserve",
       "experimentalDecorators": true,
+      "useDefineForClassFields": true,
       "baseUrl": "./",
       "paths": {
         // "@components/*": ["./src/components/*"],

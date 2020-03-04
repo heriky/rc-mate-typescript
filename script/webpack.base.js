@@ -38,7 +38,7 @@ module.exports = ({ mode }) => ({
 			// },
 			{
 				test: /\.(j|t)sx?$/,
-				use: ['babel', 'async-catch'],
+				use: ['babel'],
 				exclude: /node_modules/
 			},
 			{

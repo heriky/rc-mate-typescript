@@ -102,11 +102,6 @@ export function merge (result: OriginType[]): OriginType[] {
 }
 
 export function handleInitData (data: OriginType[]) {
-    // return traverse.top2Bottom(data, item => {
-    //     // 添加parent属性，添加checked属性
-    //     item.checked = false;
-    //     return item;
-    // });
     return traverse.top2Bottom(data, item => (item.checked = false, item)); // 逗号运算符
 }
 
@@ -125,6 +120,56 @@ export function checkOther (item: OriginType) {
        }
    }
    return item;
+}
+
+export function checkChildren (item: OriginType, checked: boolean): OriginType {
+    if (!item.children?.length) {
+        return item;
+    }
+    item.children = traverse.top2Bottom(item.children ?? [], it => {
+        it.checked = checked;
+        it.indeterminate = undefined;
+        return it;
+    }, item);
+    return item;
+}
+
+export type RsType = {
+    id: string | number;
+    name: string;
+    ids: string;
+    names: string;
+}[];
+
+export function genResult (source: OriginType[]): RsType {
+    const result: RsType = [];
+    traverse.top2Bottom(source, item => {
+        if (!item.checked) return item;
+        // 顶层则直接输出
+        if (!item.parent) {
+            result.push({ id: item.id, ids: item.id + '', name: item.name, names: item.name });
+            return item;
+        }
+
+        const names = [item.name];
+        const ids = [item.id];
+        let cusor: OriginType | undefined = item.parent;
+        let shouldRecord = true;
+        while(cusor) {
+            const { id, name } = cusor;
+            if (shouldRecord) {
+                shouldRecord = !result.find(rs => rs.id === id); // 某一个层级的父节点id，已存在于result中，则不添加
+            }
+            names.unshift(name);
+            ids.unshift(id);
+            cusor = cusor.parent;
+        }
+        if (shouldRecord) {
+            result.push({ id: item.id, name: item.name, ids: ids.join(','), names: names.join(',') });
+        }
+        return item;
+    });
+    return result;
 }
 
 export const traverse = {

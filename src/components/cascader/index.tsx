@@ -1,5 +1,5 @@
-import React, { useState, useMemo, useRef, ComponentType, ComponentProps, useEffect } from 'react';
-import { traverse, OriginType, countLayer, flatten, merge, checkOther, handleInitData } from './utils'
+import React, { useState, useMemo, useRef, ComponentType, ComponentProps, useEffect, CSSProperties } from 'react';
+import { traverse, OriginType, countLayer, RsType, merge, genResult, checkOther, handleInitData, checkChildren } from './utils'
 import { VGroup, HGroup } from '../group';
 import Checkbox from './checkbox';
 import styles from './style.less';
@@ -7,9 +7,14 @@ import rawData from './data';
 import { useMounted } from '../../hooks';
 
 const defaultProps = {
+    theme: {
+        layerStyle: {} as CSSProperties,
+        layerItemStyle: {} as CSSProperties,
+        rootStyle: {} as CSSProperties
+    },
     data: rawData,
     checkedIds: [] as (string | number)[],
-    onChange: (result: OriginType[], a: OriginType) => { },
+    onChange: (result: OriginType[], a: OriginType, formattedResult: () => RsType) => { },
     checkbox: Checkbox as ComponentType<Partial<ComponentProps<typeof Checkbox>>> // 这里，因为Checkbox的所有属性都是可选的，如果没有Partial则ts会报错
 };
 
@@ -19,18 +24,15 @@ type Props = typeof defaultProps;
 // FIXME： 测hi这里
 const STATE_KEY = 'layerId';
 
-interface Props2 {
-    name: string;
-}
-
 export default function Cascader (props: Props) {
-    const { data, checkbox: Compo, checkedIds, onChange } = props;
+    const { data: rawData, checkbox: Compo, checkedIds, onChange, theme } = props;
 
-    const resultRef = useRef<OriginType[]>([]);
+    const data = useMemo(() => handleInitData(rawData), [rawData]);
     const layerCount = useMemo(() => countLayer(data), [data]);
 
     const [state, setState] = useState<{ [key: string]: OriginType['id'] }>({});
-    const [source, setSource] = useState<OriginType[]>(() => handleInitData(data));
+    // source是控制内部值，data是经过处理的数据源
+    const [source, setSource] = useState<OriginType[]>(data);
     const mounted = useMounted();
 
     useEffect(() => {
@@ -45,9 +47,10 @@ export default function Cascader (props: Props) {
     useEffect(() => {
         function checkItems () {
             if (!checkedIds.length) return;
-            const newSource = traverse.bottom2Top(source, item => {
+            const newSource = traverse.bottom2Top(data, item => {
                 if (checkedIds.includes(item.id)) {
                     item.checked = true;
+                    checkChildren(item, true);
                     return item;
                 }
                 return checkOther(item);
@@ -55,7 +58,7 @@ export default function Cascader (props: Props) {
             setSource(newSource);
         }
         checkItems();
-    }, [checkedIds, source]);
+    }, [checkedIds, data]);
 
     function itemClick (id: OriginType['id'], layer: number) {
         return () => {
@@ -73,32 +76,15 @@ export default function Cascader (props: Props) {
                     item.indeterminate = undefined;
 
                     // 2. 子孙孩子同步。这里可以放心使用，不会出现性能问题，因为有限定条件，收益在每一次点击的时候，实际上这个遍历只执行一次
-                    item.children = traverse.top2Bottom(item.children ?? [], it => {
-                        it.checked = v;
-                        it.indeterminate = undefined;
-                        return it;
-                    });
-                    return item;
+                    return checkChildren(item, v);
                 }
 
                 // 3.其余结点计算
                 return checkOther(item);
-            } );
+            });
 
             setSource(newSource);
-
-
-            // 如果对于复杂需求，应该使用useEffect对result进行响应，对result中每个项都进行状态的判定
-            // 计算结果
-            if (v) {
-                resultRef.current.push(_item);
-            } else {
-                resultRef.current = resultRef.current.filter(item => item.id !== _item.id);
-            }
-
-            const result = merge(resultRef.current);
-
-            onChange(result.map(flatten), _item);
+            onChange(newSource, _item, () => genResult(newSource));
         }
     }
 
@@ -118,9 +104,9 @@ export default function Cascader (props: Props) {
     }
 
     function renderLayer (list: OriginType[], layer: number) {
-        return <VGroup key={layer} hAlign="flex-start" vAlign="flex-start" tag="ul" className={styles.layer}>
+        return <VGroup key={layer} hAlign="flex-start" vAlign="flex-start" tag="ul" className={`${styles.layer} ${theme.layerStyle}`}>
             {list.map((item: OriginType) => {
-                const classList = [styles.layerItem];
+                const classList = [styles.layerItem, theme.layerItemStyle];
                 state[STATE_KEY + layer] === item.id && (classList.push(styles.active));
                 item.children?.length && (classList.push(styles.indicator));
                 const onClick = item.children?.length ? itemClick(item.id, layer) : () => { };
@@ -133,7 +119,7 @@ export default function Cascader (props: Props) {
         </VGroup>
     }
 
-    return <HGroup className={styles.cascader} hAlign="flex-start" vAlign="flex-start">
+    return <HGroup className={`${styles.cascader} ${theme.rootStyle}`} hAlign="flex-start" vAlign="flex-start">
         {
             Array(layerCount).fill(1).map((a, i) => {
                 const layer = i + 1;
