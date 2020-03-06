@@ -8,10 +8,10 @@ import { useMounted } from '../../hooks';
 
 const defaultProps = {
     theme: {
-        layerStyle: {} as CSSProperties,
-        layerItemStyle: {} as CSSProperties,
-        rootStyle: {} as CSSProperties
+        layerClassName: '',
+        layerItemClassName: '',
     },
+    className: '',
     data: rawData,
     checkedIds: [] as (string | number)[],
     onChange: (result: OriginType[], a: OriginType, formattedResult: () => RsType) => { },
@@ -25,7 +25,7 @@ type Props = typeof defaultProps;
 const STATE_KEY = 'layerId';
 
 export default function Cascader (props: Props) {
-    const { data: rawData, checkbox: Compo, checkedIds, onChange, theme } = props;
+    const { data: rawData, checkbox: Compo, checkedIds, onChange, theme, className } = props;
 
     const data = useMemo(() => handleInitData(rawData), [rawData]);
     const layerCount = useMemo(() => countLayer(data), [data]);
@@ -104,9 +104,9 @@ export default function Cascader (props: Props) {
     }
 
     function renderLayer (list: OriginType[], layer: number) {
-        return <VGroup key={layer} hAlign="flex-start" vAlign="flex-start" tag="ul" className={`${styles.layer} ${theme.layerStyle}`}>
+        return <VGroup key={layer} hAlign="flex-start" vAlign="flex-start" tag="ul" className={`${styles.layer} ${theme.layerClassName}`}>
             {list.map((item: OriginType) => {
-                const classList = [styles.layerItem, theme.layerItemStyle];
+                const classList = [styles.layerItem, theme.layerItemClassName];
                 state[STATE_KEY + layer] === item.id && (classList.push(styles.active));
                 item.children?.length && (classList.push(styles.indicator));
                 const onClick = item.children?.length ? itemClick(item.id, layer) : () => { };
@@ -119,7 +119,7 @@ export default function Cascader (props: Props) {
         </VGroup>
     }
 
-    return <HGroup className={`${styles.cascader} ${theme.rootStyle}`} hAlign="flex-start" vAlign="flex-start">
+    return <HGroup className={`${styles.cascader} ${className}`} hAlign="flex-start" vAlign="flex-start">
         {
             Array(layerCount).fill(1).map((a, i) => {
                 const layer = i + 1;
