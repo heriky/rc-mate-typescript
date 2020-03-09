@@ -34,3 +34,11 @@ export function useForceUpdate () {
     }, []);
 }
 
+
+export function useEffectDeep (fn: () => void | (() => void), deps: unknown[]) {
+    const ref = useRef(deps);
+    if (JSON.stringify(ref.current) !== JSON.stringify(deps)) {
+        ref.current = deps;
+    }
+    useEffect(fn, ref.current);
+}

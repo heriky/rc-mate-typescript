@@ -1,10 +1,9 @@
-import React, { useState, useMemo, useRef, ComponentType, ComponentProps, useEffect, CSSProperties } from 'react';
-import { traverse, OriginType, countLayer, RsType, merge, genResult, checkOther, handleInitData, checkChildren } from './utils'
+import React, { useState, useMemo, ComponentType, ComponentProps, useEffect, MouseEvent, useCallback } from 'react';
+import { traverse, OriginType, countLayer, RsType, genResult, checkOther, handleInitData, checkChildren } from './utils'
 import { VGroup, HGroup } from '../group';
 import Checkbox from './checkbox';
 import styles from './style.less';
 import rawData from './data';
-import { useMounted } from '../../hooks';
 
 const defaultProps = {
     theme: {
@@ -33,15 +32,6 @@ export default function Cascader (props: Props) {
     const [state, setState] = useState<{ [key: string]: OriginType['id'] }>({});
     // source是控制内部值，data是经过处理的数据源
     const [source, setSource] = useState<OriginType[]>(data);
-    const mounted = useMounted();
-
-    useEffect(() => {
-        // 数据源变化响应（例如搜索功能）。需注意，未挂载时不要执行。
-        if (mounted) {
-            const newData = handleInitData(data);
-            setSource(newData);
-        }
-    }, [data, mounted]);
 
     // 设置外部传入的已选项目。如果对于复杂需求，应该使用useEffect对result进行响应，对result中每个项都进行状态的判定
     useEffect(() => {
@@ -55,6 +45,7 @@ export default function Cascader (props: Props) {
                 }
                 return checkOther(item);
             });
+
             setSource(newSource);
         }
         checkItems();
@@ -77,6 +68,7 @@ export default function Cascader (props: Props) {
 
                     // 2. 子孙孩子同步。这里可以放心使用，不会出现性能问题，因为有限定条件，收益在每一次点击的时候，实际上这个遍历只执行一次
                     return checkChildren(item, v);
+                    // TODO:3. 优化： _item的当前层级就不需要再处理了
                 }
 
                 // 3.其余结点计算
@@ -87,6 +79,12 @@ export default function Cascader (props: Props) {
             onChange(newSource, _item, () => genResult(newSource));
         }
     }
+
+    const preventClick = useCallback((e: MouseEvent<HTMLElement>) => {
+        e.stopPropagation();
+        e.nativeEvent.stopPropagation();
+        e.nativeEvent.stopImmediatePropagation();
+    }, []);
 
     // 逐层获取数据
     function getLayerData (layer: number): OriginType[] {
@@ -119,7 +117,9 @@ export default function Cascader (props: Props) {
         </VGroup>
     }
 
-    return <HGroup className={`${styles.cascader} ${className}`} hAlign="flex-start" vAlign="flex-start">
+    console.log('render cascader ---------');
+
+    return <HGroup className={`${styles.cascader} ${className}`} hAlign="flex-start" vAlign="flex-start" onClick={preventClick}>
         {
             Array(layerCount).fill(1).map((a, i) => {
                 const layer = i + 1;

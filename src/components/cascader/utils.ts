@@ -101,6 +101,7 @@ export function merge (result: OriginType[]): OriginType[] {
     return rs;
 }
 
+// 添加父节点、初始化checked状态、添加layer属性（用于优化）
 export function handleInitData (data: OriginType[]) {
     return traverse.top2Bottom(data, item => (item.checked = false, item)); // 逗号运算符
 }

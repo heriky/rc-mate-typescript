@@ -1,13 +1,13 @@
 {
   "name": "rc-mate-typescript",
-  "version": "0.0.8",
+  "version": "0.0.11",
   "description": "react mate, typescript version.",
   "main": "index.js",
   "scripts": {
     "start": "webpack-dev-server --config ./script/webpack.dev.js --env.mode=development",
     "build:qa": "webpack --config ./script/webpack.prod.js --env.mode=production --env.qa",
     "build:production": "webpack --config ./script/webpack.prod.js --env.mode=production --env.production",
-    "build": "webpack --config ./script/webpack.prod.js --env.mode=production --env.production && webpack --config ./script/webpack.web.js --env.mode=production && cp ./package.json ./dist/package.json"
+    "build": "rm -rf dist && webpack --config ./script/webpack.prod.js --env.mode=production --env.production && webpack --config ./script/webpack.web.js --env.mode=production && cp ./package.json ./dist/package.json"
   },
   "repository": {
     "type": "git",
@@ -67,9 +67,10 @@
     "webpack": "^4.41.2",
     "webpack-cli": "^3.3.10",
     "webpack-dev-server": "^3.9.0",
-    "webpack-merge": "^4.2.2"
+    "webpack-merge": "^4.2.2",
+    "react": "^16.12.0"
   },
   "dependencies": {
-    "react": "^16.12.0"
+    
   }
 }
