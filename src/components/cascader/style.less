@@ -58,7 +58,14 @@
     display: inline-flex;
     justify-content: flex-start;
     align-items: center;
-    cursor: pointer;
+    &.disabled {
+        background-color: #eee;
+        cursor: not-allowed;
+        .checkbox {
+            color: #d9d9d9;
+            cursor: not-allowed;
+        }
+    }
 }
 
 .checkbox {

@@ -5,6 +5,7 @@ export interface OriginType {
     parent?: OriginType;
     checked?: boolean;
     indeterminate?: boolean;
+    disabled?: boolean;
 }
 
 function bottom2Top (origin: OriginType[], handler: (current: OriginType) => OriginType): OriginType[] {
@@ -133,6 +134,15 @@ export function checkChildren (item: OriginType, checked: boolean): OriginType {
         return it;
     }, item);
     return item;
+}
+
+export function disableItem (item: OriginType, disabled = true) {
+    item.disabled = disabled;
+    if (item.children?.length) {
+        item.children.forEach(child => {
+            disableItem(child);
+        });
+    }
 }
 
 export type RsType = {

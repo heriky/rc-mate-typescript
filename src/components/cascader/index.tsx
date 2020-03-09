@@ -1,5 +1,5 @@
 import React, { useState, useMemo, ComponentType, ComponentProps, useEffect, MouseEvent, useCallback } from 'react';
-import { traverse, OriginType, countLayer, RsType, genResult, checkOther, handleInitData, checkChildren } from './utils'
+import { traverse, OriginType, countLayer, RsType, genResult, checkOther, handleInitData, checkChildren, disableItem } from './utils'
 import { VGroup, HGroup } from '../group';
 import Checkbox from './checkbox';
 import styles from './style.less';
@@ -12,6 +12,7 @@ const defaultProps = {
     },
     className: '',
     data: rawData,
+    disabledIds: [] as (string | number)[],
     checkedIds: [] as (string | number)[],
     onChange: (result: OriginType[], a: OriginType, formattedResult: () => RsType) => { },
     checkbox: Checkbox as ComponentType<Partial<ComponentProps<typeof Checkbox>>> // 这里，因为Checkbox的所有属性都是可选的，如果没有Partial则ts会报错
@@ -24,7 +25,7 @@ type Props = typeof defaultProps;
 const STATE_KEY = 'layerId';
 
 export default function Cascader (props: Props) {
-    const { data: rawData, checkbox: Compo, checkedIds, onChange, theme, className } = props;
+    const { data: rawData, checkbox: Compo, checkedIds, onChange, theme, className, disabledIds } = props;
 
     const data = useMemo(() => handleInitData(rawData), [rawData]);
     const layerCount = useMemo(() => countLayer(data), [data]);
@@ -36,8 +37,12 @@ export default function Cascader (props: Props) {
     // 设置外部传入的已选项目。如果对于复杂需求，应该使用useEffect对result进行响应，对result中每个项都进行状态的判定
     useEffect(() => {
         function checkItems () {
-            if (!checkedIds.length) return;
+            if (!checkedIds.length && !disabledIds.length) return;
             const newSource = traverse.bottom2Top(data, item => {
+                if (disabledIds.includes(item.id)) {
+                    disableItem(item);
+                }
+
                 if (checkedIds.includes(item.id)) {
                     item.checked = true;
                     checkChildren(item, true);
@@ -49,11 +54,14 @@ export default function Cascader (props: Props) {
             setSource(newSource);
         }
         checkItems();
-    }, [checkedIds, data]);
+    }, [checkedIds, data, disabledIds]);
 
     function itemClick (id: OriginType['id'], layer: number) {
         return () => {
             const newState = { ...state, [STATE_KEY + layer]: id };
+
+            // 重复点击同一层，则不触发
+            if (newState[STATE_KEY + layer] === state[STATE_KEY + layer]) return;
             setState(newState);
         }
     }
@@ -110,7 +118,7 @@ export default function Cascader (props: Props) {
                 const onClick = item.children?.length ? itemClick(item.id, layer) : () => { };
 
                 return <li className={classList.join(' ')} key={item.id} onClick={onClick}>
-                    <Compo checked={item.checked} indeterminate={item.indeterminate} onChange={itemCheck(item)} />
+                    <Compo disabled={item.disabled} checked={item.checked} indeterminate={item.indeterminate} onChange={itemCheck(item)} />
                     <span style={{ marginLeft: 7, verticalAlign: 3 }}>{item.name}</span>
                 </li>
             })}

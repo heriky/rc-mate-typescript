@@ -26,7 +26,7 @@ export default function Dev2 () {
 
     console.log('render');
 
-    return <Cascader checkedIds={result.map(item => item.id)} onChange={change}/>
+    return <Cascader checkedIds={result.map(item => item.id)} disabledIds={[1]} onChange={change}/>
 }
 
 //  checkedIds={[111,12]}

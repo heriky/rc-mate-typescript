@@ -8,6 +8,7 @@ const defaultProps = {
     checked: false,
     children: null as ReactNode,
     indeterminate: false,
+    disabled: false,
     onChange: (checked: boolean, e: React.MouseEvent) => {}
 };
 
@@ -15,7 +16,7 @@ const defaultProps = {
 type Props = typeof defaultProps;
 export default function Checkbox (props: Props) {
 
-    const { defaultChecked, className, style, children, checked, indeterminate, onChange, ...rest } = props;
+    const { defaultChecked, className, style, children, checked, indeterminate, onChange, disabled, ...rest } = props;
     const [_checked, setChecked] = useState(defaultChecked ?? checked);
 
     useEffect(() => {
@@ -23,6 +24,7 @@ export default function Checkbox (props: Props) {
     }, [checked])
 
     function handleChange (e: React.MouseEvent) {
+        if (disabled) return;
         const newChecked = !_checked;
         setChecked(newChecked);
         onChange(newChecked, e);
@@ -36,7 +38,7 @@ export default function Checkbox (props: Props) {
         classList.push(styles.checked);
     }
 
-    return <label className={styles.checkboxWrapper} onClick={handleChange} {...rest}>
+    return <label className={`${styles.checkboxWrapper} ${disabled ? styles.disabled : ''}`} onClick={handleChange} {...rest}>
         <span className={classList.join(' ')} style={style}/>
         {typeof children === 'string' ? <span style={{ marginLeft: 7 }}>{children}</span> : children}
     </label>
