@@ -1,5 +1,5 @@
 import React, { useState, useMemo, ComponentType, ComponentProps, useEffect, MouseEvent, useCallback } from 'react';
-import { traverse, OriginType, countLayer, RsType, genResult, checkOther, handleInitData, checkChildren, disableItem } from './utils'
+import { traverse, OriginType, countLayer, RsType, genResult, checkOther, handleInitData, checkChildren, disableItem, getLayerResult } from './utils'
 import { VGroup, HGroup } from '../group';
 import Checkbox from './checkbox';
 import styles from './style.less';
@@ -14,7 +14,7 @@ const defaultProps = {
     data: rawData,
     disabledIds: [] as (string | number)[],
     checkedIds: [] as (string | number)[],
-    onChange: (result: OriginType[], a: OriginType, formattedResult: () => RsType) => { },
+    onChange: (result: OriginType[], item: OriginType, formattedResult: (layer?: number) => RsType) => { },
     checkbox: Checkbox as ComponentType<Partial<ComponentProps<typeof Checkbox>>> // 这里，因为Checkbox的所有属性都是可选的，如果没有Partial则ts会报错
 };
 
@@ -84,7 +84,9 @@ export default function Cascader (props: Props) {
             });
 
             setSource(newSource);
-            onChange(newSource, _item, () => genResult(newSource));
+            onChange(newSource, _item, (layer?: number) => {
+                return layer === undefined ? genResult(newSource) : getLayerResult(newSource, layer);
+            });
         }
     }
 

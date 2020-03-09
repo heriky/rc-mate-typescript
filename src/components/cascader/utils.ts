@@ -6,6 +6,7 @@ export interface OriginType {
     checked?: boolean;
     indeterminate?: boolean;
     disabled?: boolean;
+    layer?: number; // 从1开始
 }
 
 function bottom2Top (origin: OriginType[], handler: (current: OriginType) => OriginType): OriginType[] {
@@ -23,16 +24,18 @@ function bottom2Top (origin: OriginType[], handler: (current: OriginType) => Ori
     return result;
 }
 
-function top2Bottom (origin: OriginType[], handler?: (a: OriginType) => OriginType, parent?: OriginType): OriginType[] {
+function top2Bottom (origin: OriginType[], handler?: (a: OriginType) => OriginType, parent?: OriginType, layer = 1): OriginType[] {
     
     const result = [];
     for (let i = 0; i < origin.length; i += 1) {
         const item = origin[i];
         const newItem = handler ? handler(item) : item;
-        if (Array.isArray(item.children) && item.children.length > 0) {
-            newItem.children = top2Bottom(item.children, handler, item);
-        }
         newItem.parent = parent;
+        newItem.layer = layer;
+
+        if (Array.isArray(item.children) && item.children.length > 0) {
+            newItem.children = top2Bottom(item.children, handler, item, newItem.layer + 1);
+        }
         result.push(newItem);
     }
     return result;
@@ -132,12 +135,12 @@ export function checkChildren (item: OriginType, checked: boolean): OriginType {
         it.checked = checked;
         it.indeterminate = undefined;
         return it;
-    }, item);
+    }, item, (item.layer ?? 1) + 1);
     return item;
 }
 
 export function disableItem (item: OriginType, disabled = true) {
-    item.disabled = disabled;
+    item.disabled = item.checked === false ? disabled: false; // 这里处理的是，只有未选中的，才会被disabled
     if (item.children?.length) {
         item.children.forEach(child => {
             disableItem(child);
@@ -148,8 +151,8 @@ export function disableItem (item: OriginType, disabled = true) {
 export type RsType = {
     id: string | number;
     name: string;
-    ids: string;
-    names: string;
+    ids: (string | number)[];
+    names: string[];
 }[];
 
 export function genResult (source: OriginType[]): RsType {
@@ -158,7 +161,7 @@ export function genResult (source: OriginType[]): RsType {
         if (!item.checked) return item;
         // 顶层则直接输出
         if (!item.parent) {
-            result.push({ id: item.id, ids: item.id + '', name: item.name, names: item.name });
+            result.push({ id: item.id, ids: [item.id] , name: item.name, names: [item.name] });
             return item;
         }
 
@@ -176,7 +179,29 @@ export function genResult (source: OriginType[]): RsType {
             cusor = cusor.parent;
         }
         if (shouldRecord) {
-            result.push({ id: item.id, name: item.name, ids: ids.join(','), names: names.join(',') });
+            result.push({ id: item.id, name: item.name, ids, names });
+        }
+        return item;
+    });
+    return result;
+}
+
+
+export function getLayerResult (data: OriginType[], layer: number): RsType {
+    // 深入到底部，把底部的id全部加入
+    const result: RsType = [];
+    bottom2Top(data, item => {
+        if (item.checked && item.layer === layer) {
+            const ids = [];
+            const names = [];
+            let cur: OriginType | undefined = item;
+            while(cur) {
+                const { id, name } = cur;
+                ids.unshift(id);
+                names.unshift(name);
+                cur = cur.parent;
+            }
+            result.push({ id: item.id, name: item.name, ids, names });
         }
         return item;
     });

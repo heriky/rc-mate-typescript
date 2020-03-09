@@ -1,6 +1,6 @@
 {
   "name": "rc-mate-typescript",
-  "version": "0.0.11",
+  "version": "0.0.13",
   "description": "react mate, typescript version.",
   "main": "index.js",
   "scripts": {
