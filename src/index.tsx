@@ -15,9 +15,10 @@ const { Pane } = Accordin as typeof Accordin & { Pane: ComponentType<any> };
 
 const App = () => {
     return <Group gap="20">
-        <Dev2Container />
-        <Other />
+        <DevContainer />
     </Group>
 }
+
+const a = '12313';
 
 ReactDOM.render(<App />, document.getElementById('root'));
