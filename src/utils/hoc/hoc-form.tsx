@@ -1,6 +1,5 @@
 import React, { Component, ComponentClass, createContext, FormEvent, FormEventHandler } from 'react'
 
-
 interface ContextData { 
     model: {[name: string]: unknown}; 
     changeModel(name: string, value: unknown): void; 
